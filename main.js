@@ -1,77 +1,92 @@
-const p1 = []// X
-const p2 = []// O
-let user = true;
-// true = p1 = x
-// false = p2 = O
-let alguemGanhou = false;
+import WebSocketClient from './websocket.js';
+import Scene from './Scene.js';
+const reader = new FileReader();
+let websocketClient;
+let turn = true
 
-const possibilities = [
-  ['a1', 'a2', 'a3'],
-  ['b1', 'b2', 'b3'],
-  ['c1', 'c2', 'c3'],
-  ['a1', 'b1', 'c1'],
-  ['a2', 'b2', 'c2'],
-  ['a3', 'b3', 'c3'],
-  ['a1', 'b2', 'c3'],
-  ['a3', 'b2', 'c1'],
-]
+const roomId = "1";
+const usuario = document.getElementById("usuario");
+const botaoConectar = document.getElementById("conectar");
+const buttons = document.querySelectorAll(".game-button");
+const imgs = document.querySelectorAll('img[id^="circle"], img[id^="x"]');
 
-function place(id) {
-  if (user) {
-    console.log(`img${id}`);
-    // pegar img e botão
-    let img = document.getElementById(`x${id}`);
-    let button = document.getElementById(`button${id}`);
+const scene = new Scene(imgs, buttons);
 
-    // Manipular os elementos
-    button.disabled = true;
-    img.classList.remove("hidden");
-
-    // adicionar posição para o player e chamar função que verifica se ele ganhou
-    p1.push(id);
-    user = false
-    ganhou(p1);
-  } else {
-    // pegar img e botão
-    let img = document.getElementById(`circle${id}`);
-    let button = document.getElementById(`button${id}`);
-
-    // Manipular os elementos
-    button.disabled = true;
-    img.classList.remove("hidden");
-
-    p2.push(id);
-    user = true;
-    ganhou(p2);
-  }
-  console.log(p1, p2)
-}
-
-function ganhou(player) {
-  for (let possibility of possibilities) {
-    let c = 0;
-    player.map((item) => {
-      if (possibility.includes(item)) c++;
-    })
-    if (c == 3) {
-      return finish(possibility);
+// Pegar usuario do usuário e conectar
+botaoConectar.addEventListener("click", function () {
+  const username = usuario.value;
+  websocketClient = new WebSocketClient(roomId, username, response => {
+    console.log(response)
+    if (Array.isArray(response)) {
+      const result = JSON.parse(response);
+      scene.finish(result[1]);
     }
-  }
+    if (Array.isArray(response)) {
+      scene.finish(response[1]);
+    } else {
+      enemyUser(response);
+    }
+  });
+});
 
-  if (p1.length + p2.length == 9 && !alguemGanhou) {
-    alert("Empate!")
-  }
+// Enviar o movimento do jogador
+document.addEventListener('DOMContentLoaded', () => {
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.getAttribute('id').replace('button', '');
+      currentUser(id);
+    })
+  })
+})
+
+//  Enviar a jogada 
+function currentUser(id) {
+  websocketClient.send(id);
+  scene.currentUser(id);
+  turn = !turn;
+}
+function enemyUser(id) {
+  scene.enemyUser(id);
+  turn = !turn;
 }
 
-function finish(data) {
-  for (let i = 0; i < 3; i++) {
-    let tag = document.getElementById(data[i]);
-    tag.style.backgroundColor = "#ff0000";
-  }
-  let playerWinner = document.getElementById('winner')
-  playerWinner.classList.remove("hidden")
-  alguemGanhou = true;
-}
+// async function parseResponse(blob) {
+//   try {
+//     const content = await blob.text();
+//     const parsedData = JSON.parse(content);
+
+//     if (Array.isArray(parsedData) && parsedData.length === 2) {
+//       const [isWinner, message] = parsedData;
+//       console.log('Is Winner:', isWinner);
+//       console.log('Message:', message);
+
+//       if (typeof isWinner === 'boolean' && typeof message === 'string') {
+//         // Você pode usar os valores isWinner e message da maneira apropriada
+//       } else {
+//         console.error('Formato inválido dos dados recebidos.');
+//       }
+//     } else {
+//       console.error('Formato inválido dos dados recebidos.');
+//     }
+
+//     // ... Resto do código ...
+
+//   } catch (error) {
+//     console.error('Erro ao processar a resposta:', error);
+//   }
+// };
 
 
+
+reader.onload = function (event) {
+  const arrayBuffer = event.target.result; // Obtém os dados como um ArrayBuffer
+  const uint8Array = new Uint8Array(arrayBuffer); // Converte o ArrayBuffer em um Uint8Array
+
+  // Agora você pode manipular o Uint8Array conforme necessário
+  console.log(uint8Array);
+
+  // Exemplo: Converter os dados em uma string (assumindo que é texto)
+  const text = new TextDecoder().decode(uint8Array);
+  console.log(text);
+};
 
