@@ -16,15 +16,17 @@ const scene = new Scene(imgs, buttons);
 botaoConectar.addEventListener("click", function () {
   const username = usuario.value;
   websocketClient = new WebSocketClient(roomId, username, response => {
-    console.log(response)
-    if (Array.isArray(response)) {
-      const result = JSON.parse(response);
-      scene.finish(result[1]);
+    let gameResult;
+
+    try {
+      gameResult = JSON.parse(response);
+    } catch (error) {
+      gameResult = response;
     }
-    if (Array.isArray(response)) {
-      scene.finish(response[1]);
+    if (gameResult.result === true) {
+      scene.finish(gameResult.moves);
     } else {
-      enemyUser(response);
+      enemyUser(gameResult);
     }
   });
 });
@@ -57,8 +59,6 @@ function enemyUser(id) {
 
 //     if (Array.isArray(parsedData) && parsedData.length === 2) {
 //       const [isWinner, message] = parsedData;
-//       console.log('Is Winner:', isWinner);
-//       console.log('Message:', message);
 
 //       if (typeof isWinner === 'boolean' && typeof message === 'string') {
 //         // Você pode usar os valores isWinner e message da maneira apropriada
@@ -83,10 +83,8 @@ reader.onload = function (event) {
   const uint8Array = new Uint8Array(arrayBuffer); // Converte o ArrayBuffer em um Uint8Array
 
   // Agora você pode manipular o Uint8Array conforme necessário
-  console.log(uint8Array);
 
   // Exemplo: Converter os dados em uma string (assumindo que é texto)
   const text = new TextDecoder().decode(uint8Array);
-  console.log(text);
 };
 

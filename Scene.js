@@ -6,16 +6,16 @@ export default class Scene {
 
   currentUser(id) {
     const img = this.imgs.find(img => img.getAttribute('id') == `x${id}`);
-    const button = this.buttons.find(button => button.getAttribute('id').substr(-2) == id);
-
+    const button = this.buttons.find(button => button.getAttribute('id') == `button${id}`);
+    
     button.disabled = true;
     img.classList.remove("hidden");
   }
-
+  
   enemyUser(id) {
     const img = this.imgs.find(img => img.getAttribute('id') == `circle${id}`);
-    const button = this.buttons.find(button => button.getAttribute('id').substr(-2) == id);
-
+    const button = this.buttons.find(button => button.getAttribute('id') == `button${id}`);
+    
     button.disabled = true;
     img.classList.remove("hidden");
   }
