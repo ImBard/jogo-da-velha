@@ -1,33 +1,62 @@
 import WebSocketClient from './websocket.js';
 import Scene from './Scene.js';
-const reader = new FileReader();
+import Player from './players.js';
 let websocketClient;
-let turn = true
+const nameP1 = document.getElementById("player1")
+const nameP2 = document.getElementById("player2")
+const border = document.getElementById("tbody");
 
-const roomId = "1";
 const usuario = document.getElementById("usuario");
+const sala = document.getElementById("sala")
 const botaoConectar = document.getElementById("conectar");
 const buttons = document.querySelectorAll(".game-button");
 const imgs = document.querySelectorAll('img[id^="circle"], img[id^="x"]');
 
 const scene = new Scene(imgs, buttons);
+const players = new Player();
 
 // Pegar usuario do usuário e conectar
 botaoConectar.addEventListener("click", function () {
   const username = usuario.value;
+  const roomId = sala.value;
+  document.getElementById("salaId").innerHTML += roomId;
   websocketClient = new WebSocketClient(roomId, username, response => {
     let gameResult;
-
+    console.log(response);
+    if (response === "inicia_o_jogo") {
+      players.setTurn();
+    }
     try {
       gameResult = JSON.parse(response);
+      console.log(gameResult);
+      if (gameResult.hasOwnProperty('player1')) {
+        players.setPlayerName(gameResult);
+        nameP1.innerHTML += gameResult.player1;
+        nameP2.innerHTML += gameResult.player2;
+        nameP1.classList.add("text-blue-400");
+      }
     } catch (error) {
       gameResult = response;
     }
+
+    // if (players.getTurn() && players.names.player2 !== "") {
+    //   border.classList.add("border-blue-500");
+    //   border.classList.remove("border-red-500");
+    // } else if (!players.getTurn()){
+    //   border.classList.add("border-red-500");
+    //   border.classList.remove("border-blue-500");
+    // }
+
     if (gameResult.result === true) {
-      scene.finish(gameResult.moves);
+      scene.finish(gameResult.moves, gameResult.winner);
+
+      buttons.forEach(button => {
+        button.disabled = true;
+      })
     } else {
       enemyUser(gameResult);
     }
+
   });
 });
 
@@ -43,48 +72,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 //  Enviar a jogada 
 function currentUser(id) {
-  websocketClient.send(id);
-  scene.currentUser(id);
-  turn = !turn;
+  if (players.getTurn()) {
+    websocketClient.send(id);
+    scene.currentUser(id);
+    players.setTurn(!players.getTurn);
+  }
+  
 }
+
 function enemyUser(id) {
-  scene.enemyUser(id);
-  turn = !turn;
+  if (!players.getTurn()) {
+    scene.enemyUser(id);
+    players.setTurn(!players.getTurn);
+  }
 }
-
-// async function parseResponse(blob) {
-//   try {
-//     const content = await blob.text();
-//     const parsedData = JSON.parse(content);
-
-//     if (Array.isArray(parsedData) && parsedData.length === 2) {
-//       const [isWinner, message] = parsedData;
-
-//       if (typeof isWinner === 'boolean' && typeof message === 'string') {
-//         // Você pode usar os valores isWinner e message da maneira apropriada
-//       } else {
-//         console.error('Formato inválido dos dados recebidos.');
-//       }
-//     } else {
-//       console.error('Formato inválido dos dados recebidos.');
-//     }
-
-//     // ... Resto do código ...
-
-//   } catch (error) {
-//     console.error('Erro ao processar a resposta:', error);
-//   }
-// };
-
-
-
-reader.onload = function (event) {
-  const arrayBuffer = event.target.result; // Obtém os dados como um ArrayBuffer
-  const uint8Array = new Uint8Array(arrayBuffer); // Converte o ArrayBuffer em um Uint8Array
-
-  // Agora você pode manipular o Uint8Array conforme necessário
-
-  // Exemplo: Converter os dados em uma string (assumindo que é texto)
-  const text = new TextDecoder().decode(uint8Array);
-};
 
